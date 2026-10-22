@@ -9,12 +9,15 @@ function App() {
   const [maxPrice, setMaxPrice] = useState(3);
   const [minRating, setMinRating] = useState(0);
   const [searchText, setSearchText] = useState("");
+  const [favourites, setFavourites] = useState<(typeof restaurants)[number][]>([]);
 
  const filteredRestaurants = restaurants.filter(restaurant =>
         (selectedCuisine === "All" ||
             restaurant.cuisine === selectedCuisine) &&
         restaurant.price <= maxPrice &&
-        restaurant.rating >= minRating
+        restaurant.rating >= minRating &&
+        restaurant.name.toLowerCase().includes(searchText.trim().toLowerCase()
+      )
     );
 
   function chooseRestaurant(){
@@ -31,11 +34,44 @@ function App() {
 
   }
 
+  function toggleFavourite(restaurantId: number) {
+    const alreadyFavourite = favourites.find(
+      restaurant => restaurant.id === restaurantId
+    );
+
+    if (alreadyFavourite) {
+      setFavourites(
+        favourites.filter(
+          restaurant => restaurant.id !== restaurantId
+        )
+      );
+    } else {
+      const restaurantToAdd = restaurants.find(
+        restaurant => restaurant.id === restaurantId
+      );
+
+      if (restaurantToAdd) {
+        setFavourites([...favourites, restaurantToAdd]);
+      }
+    }
+  }
+
   return (
     <>
       <div>
       <h1>RESTAURANT PICKER</h1>
       <p>This app will randomly select a local restaurant based on your cravings</p>
+
+      <div>
+        <label htmlFor="search">Search restaurants:</label>
+        <input
+        id="search"
+        type="text"
+        value={searchText}
+        onChange={event => setSearchText(event.target.value)}
+        placeholder="Enter a restaurant name"
+        />
+      </div>
 
       <div> {/* Cuisine Selector*/}
         <label htmlFor="cuisine">Cuisine: </label>
@@ -99,7 +135,13 @@ function App() {
         </button>
 
         {selectedRestaurant ? (
-          <RestaurantCard restaurant={selectedRestaurant} />
+          <RestaurantCard 
+          restaurant={selectedRestaurant}
+          isFavourite={favourites.some(
+            restaurant => restaurant.id === selectedRestaurant.id
+          )}
+          onToggleFavourite={toggleFavourite} 
+          />
         ) : (
           <p>{filteredRestaurants.length === 0
       ? "No restaurants match your filters."
@@ -114,12 +156,33 @@ function App() {
               <RestaurantCard
                   key={restaurant.id}
                   restaurant={restaurant}
+                  isFavourite={favourites.some(
+                    favourite => favourite.id === restaurant.id
+                  )}
+                  onToggleFavourite={toggleFavourite}
                 />
               ))
             ) : (
               <p>No restaurants match your filters.</p>
             )}
           </section>    
+
+          <section>
+            <h2>My Favourites</h2>
+
+            {favourites.length > 0 ? (
+                favourites.map(restaurant => (
+                  <RestaurantCard
+                      key={restaurant.id}
+                      restaurant = {restaurant}
+                      isFavourite={true}
+                      onToggleFavourite={toggleFavourite}
+                    />
+                ))
+              ):(
+                <p>You haven't saved any favourites yet.</p>
+              )}
+          </section>
       
       </div>
 
